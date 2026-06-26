@@ -3,37 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sportzfy Live Streams</title>
-    <!-- Tailwind CSS for styling -->
+    <title>Sportzfy Live & World Cup 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Hls.js for playing .m3u8 streams in all browsers -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
     </style>
 </head>
-<body class="p-6">
-    <div class="max-w-6xl mx-auto">
-        <header class="mb-8 text-center">
-            <h1 class="text-4xl font-extrabold text-blue-500 mb-2">Sportzfy Live</h1>
-            <p class="text-slate-400">Select a channel below to start watching</p>
+<body class="p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-6 text-center">
+            <h1 class="text-4xl font-extrabold text-blue-500 mb-2 flex items-center justify-center gap-2">
+                ⚽ Sportzfy Live
+            </h1>
+            <p class="text-slate-400 text-sm md:text-base">Watch live sports & track the FIFA World Cup 2026 matches</p>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Player Section -->
-            <div class="lg:col-span-2 bg-slate-900 rounded-xl p-4 shadow-xl border border-slate-800">
-                <video id="videoPlayer" class="w-full aspect-video rounded-lg bg-black" controls autoplay playsinline></video>
-                <h2 id="currentChannelTitle" class="text-xl font-bold mt-4 text-slate-200">No Channel Selected</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-slate-900 rounded-xl p-4 shadow-xl border border-slate-800 flex flex-col justify-between">
+                <div>
+                    <video id="videoPlayer" class="w-full aspect-video rounded-lg bg-black shadow-inner" controls autoplay playsinline></video>
+                    <h2 id="currentChannelTitle" class="text-xl font-bold mt-4 text-slate-200 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> No Channel Selected
+                    </h2>
+                </div>
             </div>
 
-            <!-- Channel List Section -->
-            <div class="bg-slate-900 rounded-xl p-4 shadow-xl border border-slate-800 max-h-[500px] overflow-y-auto">
-                <h3 class="font-bold text-lg mb-4 text-blue-400 border-b border-slate-800 pb-2">Available Channels</h3>
-                <div id="channelContainer" class="space-y-2">
-                    <p class="text-slate-500 animate-pulse">Loading streams...</p>
+            <div class="bg-slate-900 rounded-xl p-4 shadow-xl border border-slate-800 flex flex-col h-[550px]">
+                <div class="flex bg-slate-950 p-1 rounded-lg mb-4 border border-slate-800">
+                    <button id="tabChannels" class="w-1/2 py-2 text-sm font-bold rounded-md bg-blue-600 text-white transition-all cursor-pointer" onclick="switchTab('channels')">
+                        📺 Channels
+                    </button>
+                    <button id="tabSchedule" class="w-1/2 py-2 text-sm font-bold rounded-md text-slate-400 hover:text-slate-200 transition-all cursor-pointer" onclick="switchTab('schedule')">
+                        🏆 WC 2026 Schedule
+                    </button>
+                </div>
+
+                <div id="viewChannels" class="flex-1 overflow-y-auto space-y-2">
+                    <div id="channelContainer" class="space-y-2">
+                        <p class="text-slate-500 text-center py-8 animate-pulse">Loading streams...</p>
+                    </div>
+                </div>
+
+                <div id="viewSchedule" class="hidden flex-1 overflow-y-auto space-y-4 pr-1">
+                    <div class="text-xs font-bold uppercase tracking-wider text-amber-500 mb-2 border-b border-slate-800 pb-1">Featured Matchups</div>
+                    
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+                        <div class="text-[11px] text-slate-500 font-semibold mb-1">GROUP A • OPENING MATCH</div>
+                        <div class="flex justify-between items-center text-sm font-bold">
+                            <span class="flex items-center gap-2">🇲🇽 Mexico</span>
+                            <span class="text-xs bg-slate-800 px-2 py-0.5 rounded text-blue-400">FT</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm font-bold mt-1">
+                            <span class="flex items-center gap-2">🇺🇸 USA</span>
+                            <span class="text-xs text-slate-400">Stadium: Azteca</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+                        <div class="text-[11px] text-slate-500 font-semibold mb-1">GROUP B</div>
+                        <div class="flex justify-between items-center text-sm font-bold">
+                            <span class="flex items-center gap-2">🇨🇦 Canada</span>
+                            <span class="text-xs font-normal text-amber-400 animate-pulse">LIVE</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm font-bold mt-1">
+                            <span class="flex items-center gap-2">🇫🇷 France</span>
+                            <span class="text-xs text-slate-400">Toronto</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+                        <div class="text-[11px] text-slate-500 font-semibold mb-1">GROUP C</div>
+                        <div class="flex justify-between items-center text-sm font-bold">
+                            <span class="flex items-center gap-2">🇦🇷 Argentina</span>
+                            <span class="text-xs font-normal text-slate-400">18:00 UTC</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm font-bold mt-1">
+                            <span class="flex items-center gap-2">🇪🇸 Spain</span>
+                            <span class="text-xs text-slate-400">Los Angeles</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+                        <div class="text-[11px] text-slate-500 font-semibold mb-1">GROUP D</div>
+                        <div class="flex justify-between items-center text-sm font-bold">
+                            <span class="flex items-center gap-2">🇧🇷 Brazil</span>
+                            <span class="text-xs font-normal text-slate-400">21:00 UTC</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm font-bold mt-1">
+                            <span class="flex items-center gap-2">🇩🇪 Germany</span>
+                            <span class="text-xs text-slate-400">Miami Stadium</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <script>
+        // Data fetch binding mapping to playlist
+        const m3uUrl = 'https://raw.githubusercontent.com/svimranmy1-sys/Sportzfylive-/main/channels_playlist.txt';
+        const video = document.getElementById('videoPlayer');
+        const channelTitle = document.getElementById('currentChannelTitle');
+        const container = document.getElementById('channelContainer');
+        let hls = null;
+
+        // Toggle Views Script
+        function switchTab(tab) {
+            const btnChannels = document.getElementById('tabChannels');
+            const btnSchedule = document.getElementById('tabSchedule');
+            const viewChannels = document.getElementById('viewChannels');
+            const viewSchedule = document.getElementById('viewSchedule');
+
+            if (tab === 'channels') {
+                btnChannels.className = "w-1/2 py-2 text-sm font-bold rounded-md bg-blue-600 text-white transition-all cursor-pointer";
+                btnSchedule.className = "w-1/2 py-2 text-sm font-bold rounded-md text-slate-400 hover:text-slate-200 transition-all cursor-pointer";
+                viewChannels.classList.remove('hidden');
+                viewSchedule.classList.add('hidden');
+            } else {
+                btnSchedule.className = "w-1/2 py-2 text-sm font-bold rounded-md bg-blue-600 text-white transition-all cursor-pointer";
+                btnChannels.className = "w-1/2 py-2 text-sm font-bold rounded-md text-slate-400 hover:text-slate-200 transition-all cursor-pointer";
+                viewSchedule.classList.remove('hidden');
+                viewChannels.classList.add('hidden');
+            }
+        }
+
+        function playStream(url, name) {
+            channelTitle.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> ${name}`;
+            if (Hls.isSupported()) {
+                if (hls) hls.destroy();
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                video.addEventListener('loadedmetadata', () => video.play());
+            }
+        }
+
+        function parseM3U(text) {
+            const lines = text.split(/\r?\n/);
+            const channels = [];
+            let currentChannel = null;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.toUpperCase().startsWith('#EXTINF:')) {
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/i);
+                    const nameParts = line.split(',');
+                    const name = nameParts[nameParts.length - 1].trim();
+                    const logo = logoMatch ? logoMatch[1] : 'https://via.placeholder.com/150';
+                    currentChannel = { name, logo };
+                } else if (line.startsWith('http')) {
+                    if (currentChannel) {
+                        currentChannel.url = line;
+                        channels.push(currentChannel);
+                        currentChannel = null;
+                    }
+                }
+            });
+            return channels;
+        }
+
+        fetch(m3uUrl)
+            .then(res => {
+                if (!res.ok) throw new Error(`Playlist File Missing (Status: ${res.status})`);
+                return res.text();
+            })
+            .then(data => {
+                container.innerHTML = '';
+                const channels = parseM3U(data);
+                
+                channels.forEach((channel, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full flex items-center gap-4 p-3 rounded-lg bg-slate-800/40 hover:bg-blue-600/20 border border-slate-800/80 transition text-left cursor-pointer";
+                    btn.innerHTML = `
+                        <img src="${channel.logo}" class="w-10 h-10 rounded object-contain bg-slate-950 p-1 flex-shrink-0" onerror="this.src='https://via.placeholder.com/150'">
+                        <span class="font-semibold text-slate-200 text-xs md:text-sm line-clamp-1">${channel.name}</span>
+                    `;
+                    btn.onclick = () => playStream(channel.url, channel.name);
+                    container.appendChild(btn);
+
+                    if (index === 0) playStream(channel.url, channel.name);
+                });
+            })
+            .catch(err => {
+                container.innerHTML = `<p class="text-red-400 text-xs p-4">${err.message}</p>`;
+            });
+    </script>
+</body>
+</html>
     </div>
 
     <script>
