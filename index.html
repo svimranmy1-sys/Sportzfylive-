@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sportzfy Live & World Cup 2026</title>
+    <title>Sportzfy Live & World Cup Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
@@ -17,9 +17,9 @@
     <div class="max-w-7xl mx-auto">
         <header class="mb-6 text-center">
             <h1 class="text-4xl font-extrabold text-blue-500 mb-2 flex items-center justify-center gap-2">
-                ⚽ Sportzfy Live
+                ⚽ Sportzfy Live Dashboard
             </h1>
-            <p class="text-slate-400 text-sm md:text-base">Watch live sports & track the FIFA World Cup 2026 matches</p>
+            <p class="text-slate-400 text-sm md:text-base">Stream matches live and track self-updating tournament fixtures</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -35,53 +35,189 @@
             <div class="bg-slate-900 rounded-xl p-4 shadow-xl border border-slate-800 flex flex-col h-[550px]">
                 <div class="flex bg-slate-950 p-1 rounded-lg mb-4 border border-slate-800">
                     <button id="tabChannels" class="w-1/2 py-2 text-sm font-bold rounded-md bg-blue-600 text-white transition-all cursor-pointer" onclick="switchTab('channels')">
-                        📺 Channels
+                        📺 Live Channels
                     </button>
                     <button id="tabSchedule" class="w-1/2 py-2 text-sm font-bold rounded-md text-slate-400 hover:text-slate-200 transition-all cursor-pointer" onclick="switchTab('schedule')">
-                        🏆 WC 2026 Schedule
+                        🏆 Live API Schedule
                     </button>
                 </div>
 
                 <div id="viewChannels" class="flex-1 overflow-y-auto space-y-2">
                     <div id="channelContainer" class="space-y-2">
-                        <p class="text-slate-500 text-center py-8 animate-pulse">Loading streams...</p>
+                        <p class="text-slate-500 text-center py-8 animate-pulse">Loading channels...</p>
                     </div>
                 </div>
 
-                <div id="viewSchedule" class="hidden flex-1 overflow-y-auto space-y-4 pr-1">
-                    <div class="text-xs font-bold uppercase tracking-wider text-amber-500 mb-2 border-b border-slate-800 pb-1">Featured Matchups</div>
-                    
-                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
-                        <div class="text-[11px] text-slate-500 font-semibold mb-1">GROUP A • OPENING MATCH</div>
-                        <div class="flex justify-between items-center text-sm font-bold">
-                            <span class="flex items-center gap-2">🇲🇽 Mexico</span>
-                            <span class="text-xs bg-slate-800 px-2 py-0.5 rounded text-blue-400">FT</span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm font-bold mt-1">
-                            <span class="flex items-center gap-2">🇺🇸 USA</span>
-                            <span class="text-xs text-slate-400">Stadium: Azteca</span>
-                        </div>
+                <div id="viewSchedule" class="hidden flex-1 overflow-y-auto space-y-3 pr-1">
+                    <div id="apiScheduleContainer" class="space-y-3">
+                        <p class="text-slate-500 text-center py-8 animate-pulse">Connecting to tournament API...</p>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
-                        <div class="text-[11px] text-slate-500 font-semibold mb-1">GROUP B</div>
-                        <div class="flex justify-between items-center text-sm font-bold">
-                            <span class="flex items-center gap-2">🇨🇦 Canada</span>
-                            <span class="text-xs font-normal text-amber-400 animate-pulse">LIVE</span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm font-bold mt-1">
-                            <span class="flex items-center gap-2">🇫🇷 France</span>
-                            <span class="text-xs text-slate-400">Toronto</span>
-                        </div>
-                    </div>
+    <script>
+        // Points exactly to your personal repository repository configuration target file destination
+        const m3uUrl = 'https://raw.githubusercontent.com/svimranmy1-sys/Sportzfylive-/main/channels_playlist.txt';
+        // Public ESPN scoreboard endpoint configuration (No access keys required)
+        const apiScheduleUrl = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
 
-                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
-                        <div class="text-[11px] text-slate-500 font-semibold mb-1">GROUP C</div>
-                        <div class="flex justify-between items-center text-sm font-bold">
-                            <span class="flex items-center gap-2">🇦🇷 Argentina</span>
-                            <span class="text-xs font-normal text-slate-400">18:00 UTC</span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm font-bold mt-1">
+        const video = document.getElementById('videoPlayer');
+        const channelTitle = document.getElementById('currentChannelTitle');
+        const channelContainer = document.getElementById('channelContainer');
+        const apiScheduleContainer = document.getElementById('apiScheduleContainer');
+        let hls = null;
+
+        // Interactive Interface Tab Switcher Engine Mapping Matrix
+        function switchTab(tab) {
+            const btnChannels = document.getElementById('tabChannels');
+            const btnSchedule = document.getElementById('tabSchedule');
+            const viewChannels = document.getElementById('viewChannels');
+            const viewSchedule = document.getElementById('viewSchedule');
+
+            if (tab === 'channels') {
+                btnChannels.className = "w-1/2 py-2 text-sm font-bold rounded-md bg-blue-600 text-white transition-all cursor-pointer";
+                btnSchedule.className = "w-1/2 py-2 text-sm font-bold rounded-md text-slate-400 hover:text-slate-200 transition-all cursor-pointer";
+                viewChannels.classList.remove('hidden');
+                viewSchedule.classList.add('hidden');
+            } else {
+                btnSchedule.className = "w-1/2 py-2 text-sm font-bold rounded-md bg-blue-600 text-white transition-all cursor-pointer";
+                btnChannels.className = "w-1/2 py-2 text-sm font-bold rounded-md text-slate-400 hover:text-slate-200 transition-all cursor-pointer";
+                viewSchedule.classList.remove('hidden');
+                viewChannels.classList.add('hidden');
+                fetchLiveSchedule(); // Trigger refresh on selection view toggle input
+            }
+        }
+
+        function playStream(url, name) {
+            channelTitle.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> ${name}`;
+            if (Hls.isSupported()) {
+                if (hls) hls.destroy();
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                video.addEventListener('loadedmetadata', () => video.play());
+            }
+        }
+
+        function parseM3U(text) {
+            const lines = text.split(/\r?\n/);
+            const channels = [];
+            let currentChannel = null;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.toUpperCase().startsWith('#EXTINF:')) {
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/i);
+                    const nameParts = line.split(',');
+                    const name = nameParts[nameParts.length - 1].trim();
+                    const logo = logoMatch ? logoMatch[1] : 'https://via.placeholder.com/150';
+                    currentChannel = { name, logo };
+                } else if (line.startsWith('http')) {
+                    if (currentChannel) {
+                        currentChannel.url = line;
+                        channels.push(currentChannel);
+                        currentChannel = null;
+                    }
+                }
+            });
+            return channels;
+        }
+
+        // Fetch user custom playlist files configuration mapping
+        fetch(m3uUrl)
+            .then(res => {
+                if (!res.ok) throw new Error(`Could not read file (Status: ${res.status})`);
+                return res.text();
+            })
+            .then(data => {
+                channelContainer.innerHTML = '';
+                const channels = parseM3U(data);
+                channels.forEach((channel, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full flex items-center gap-4 p-3 rounded-lg bg-slate-800/40 hover:bg-blue-600/20 border border-slate-800/80 transition text-left cursor-pointer";
+                    btn.innerHTML = `
+                        <img src="${channel.logo}" class="w-10 h-10 rounded object-contain bg-slate-950 p-1 flex-shrink-0" onerror="this.src='https://via.placeholder.com/150'">
+                        <span class="font-semibold text-slate-200 text-xs md:text-sm line-clamp-1">${channel.name}</span>
+                    `;
+                    btn.onclick = () => playStream(channel.url, channel.name);
+                    channelContainer.appendChild(btn);
+                    if (index === 0) playStream(channel.url, channel.name);
+                });
+            })
+            .catch(err => {
+                channelContainer.innerHTML = `<p class="text-red-400 text-xs p-2">Error: ${err.message}</p>`;
+            });
+
+        // Automated Fetch Engine mapping logic target link configuration for real-time live scores
+        function fetchLiveSchedule() {
+            apiScheduleContainer.innerHTML = '<p class="text-slate-500 text-center py-8 animate-pulse">Updating live fixtures...</p>';
+            
+            fetch(apiScheduleUrl)
+                .then(res => res.json())
+                .then(data => {
+                    apiScheduleContainer.innerHTML = '';
+                    const events = data.events || [];
+
+                    if (events.length === 0) {
+                        apiScheduleContainer.innerHTML = '<p class="text-slate-400 text-center py-8 text-sm">No match fixtures scheduled at this moment.</p>';
+                        return;
+                    }
+
+                    events.forEach(event => {
+                        const matchStatus = event.status?.type?.description || "Scheduled";
+                        const isLive = event.status?.type?.state === "in";
+                        const matchDate = new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                        const comp = event.competitions[0];
+                        const homeTeam = comp.competitors[0];
+                        const awayTeam = comp.competitors[1];
+
+                        const matchCard = document.createElement('div');
+                        matchCard.className = "bg-slate-950 p-3 rounded-lg border border-slate-800/80 flex flex-col justify-between shadow-sm";
+                        
+                        matchCard.innerHTML = `
+                            <div class="flex justify-between items-center text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wide">
+                                <span>${comp.venue?.address?.city || "World Cup Stadium"}</span>
+                                <span class="${isLive ? 'text-amber-500 animate-pulse bg-amber-950/40 px-2 py-0.5 rounded border border-amber-900/30' : 'text-slate-400'}">
+                                    ${isLive ? '🔴 LIVE' : matchStatus}
+                                </span>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <img src="${homeTeam.team?.logo || 'https://via.placeholder.com/20'}" class="w-5 h-5 object-contain" onerror="this.style.display='none'">
+                                        <span class="text-xs font-semibold text-slate-200">${homeTeam.team?.displayName}</span>
+                                    </div>
+                                    <span class="text-sm font-bold ${isLive ? 'text-blue-400' : 'text-slate-300'}">${homeTeam.score || '0'}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <img src="${awayTeam.team?.logo || 'https://via.placeholder.com/20'}" class="w-5 h-5 object-contain" onerror="this.style.display='none'">
+                                        <span class="text-xs font-semibold text-slate-200">${awayTeam.team?.displayName}</span>
+                                    </div>
+                                    <span class="text-sm font-bold ${isLive ? 'text-blue-400' : 'text-slate-300'}">${awayTeam.score || '0'}</span>
+                                </div>
+                            </div>
+                            <div class="mt-2 pt-2 border-t border-slate-900 flex justify-between items-center text-[10px] text-slate-500">
+                                <span>Time (Local): ${matchDate}</span>
+                                <span class="text-blue-500 font-medium">${event.shortName || ''}</span>
+                            </div>
+                        `;
+                        apiScheduleContainer.appendChild(matchCard);
+                    });
+                })
+                .catch(err => {
+                    apiScheduleContainer.innerHTML = `<p class="text-red-400 text-xs p-2 text-center">Failed to synchronize live match data feed tracker.</p>`;
+                });
+        }
+    </script>
+</body>
+</html>
                             <span class="flex items-center gap-2">🇪🇸 Spain</span>
                             <span class="text-xs text-slate-400">Los Angeles</span>
                         </div>
