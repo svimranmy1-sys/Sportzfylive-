@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sportzfy Live Streams</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Hls.js for playing .m3u8 streams in all browsers -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-extrabold text-blue-500 mb-2">Sportzfy Live</h1>
+            <p class="text-slate-400">Select a channel below to start watching</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Player Section -->
+            <div class="lg:col-span-2 bg-slate-900 rounded-xl p-4 shadow-xl border border-slate-800">
+                <video id="videoPlayer" class="w-full aspect-video rounded-lg bg-black" controls autoplay playsinline></video>
+                <h2 id="currentChannelTitle" class="text-xl font-bold mt-4 text-slate-200">No Channel Selected</h2>
+            </div>
+
+            <!-- Channel List Section -->
+            <div class="bg-slate-900 rounded-xl p-4 shadow-xl border border-slate-800 max-h-[500px] overflow-y-auto">
+                <h3 class="font-bold text-lg mb-4 text-blue-400 border-b border-slate-800 pb-2">Available Channels</h3>
+                <div id="channelContainer" class="space-y-2">
+                    <p class="text-slate-500 animate-pulse">Loading streams...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your completed Raw GitHub URL mapping to the playlist file
+        const m3uUrl = 'https://raw.githubusercontent.com/svimranmy1-sys/Sportzfylive-/main/channels_playlist.txt';
+
+        const video = document.getElementById('videoPlayer');
+        const channelTitle = document.getElementById('currentChannelTitle');
+        const container = document.getElementById('channelContainer');
+        let hls = null;
+
+        function playStream(url, name) {
+            channelTitle.textContent = name;
+            if (Hls.isSupported()) {
+                if (hls) hls.destroy();
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Native support for Safari / iOS devices
+                video.src = url;
+                video.addEventListener('loadedmetadata', () => video.play());
+            } else {
+                alert('Your browser does not support HLS video streaming.');
+            }
+        }
+
+        // Parse M3U Text File format
+        function parseM3U(text) {
+            const lines = text.split('\n');
+            const channels = [];
+            let currentChannel = null;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.startsWith('#EXTINF:')) {
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+                    const nameParts = line.split(',');
+                    const name = nameParts[nameParts.length - 1];
+                    const logo = logoMatch ? logoMatch[1] : 'https://via.placeholder.com/150';
+                    
+                    currentChannel = { name, logo };
+                } else if (line.startsWith('http')) {
+                    if (currentChannel) {
+                        currentChannel.url = line;
+                        channels.push(currentChannel);
+                        currentChannel = null;
+                    }
+                }
+            });
+            return channels;
+        }
+
+        // Fetch stream data from GitHub and render the layout
+        fetch(m3uUrl)
+            .then(res => res.text())
+            .then(data => {
+                container.innerHTML = ''; // Clear loading indicator
+                const channels = parseM3U(data);
+                
+                if(channels.length === 0) {
+                    container.innerHTML = '<p class="text-red-400">No channels found. Verify your playlist file content.</p>';
+                    return;
+                }
+
+                channels.forEach((channel, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full flex items-center gap-4 p-3 rounded-lg bg-slate-800/50 hover:bg-blue-600/30 border border-slate-700/50 transition text-left cursor-pointer";
+                    btn.innerHTML = `
+                        <img src="${channel.logo}" class="w-12 h-12 rounded object-contain bg-slate-950 p-1 flex-shrink-0" onerror="this.src='https://via.placeholder.com/150'">
+                        <span class="font-semibold text-slate-200 text-sm line-clamp-2">${channel.name}</span>
+                    `;
+                    btn.onclick = () => playStream(channel.url, channel.name);
+                    container.appendChild(btn);
+
+                    // Autoplay the first channel on target load
+                    if (index === 0) playStream(channel.url, channel.name);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                container.innerHTML = '<p class="text-red-400">Error loading playlist. Ensure your GitHub repository is set to Public.</p>';
+            });
+    </script>
+</body>
+</html>
