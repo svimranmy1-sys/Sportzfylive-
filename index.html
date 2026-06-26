@@ -45,6 +45,7 @@
                         <span class="text-zinc-400 font-medium tracking-wide">Select a channel to begin</span>
                     </div>
                 </div>
+                
                 <video id="videoPlayer" class="w-full aspect-video outline-none" controls autoplay playsinline></video>
             </div>
 
@@ -96,6 +97,7 @@
     </main>
 
     <script>
+        // Data Sources (Unchanged from your previous setup)
         const m3uUrl = 'https://raw.githubusercontent.com/svimranmy1-sys/Sportzfylive-/main/channels_playlist.txt';
         const apiScheduleUrl = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
 
@@ -106,9 +108,7 @@
         const playerStatus = document.getElementById('playerStatus');
         let hls = null;
 
-        // Clean SVG string assigned safely in pure JS memory to avoid HTML quote breaking
-        const fallbackLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='7' width='20' height='15' rx='2' ry='2'%3E%3C/rect%3E%3Cpolyline points='17 2 12 7 7 2'%3E%3C/polyline%3E%3C/svg%3E";
-
+        // Streamed.pk style UI Tab Switcher
         function switchTab(tab) {
             const btnChannels = document.getElementById('tabChannels');
             const btnSchedule = document.getElementById('tabSchedule');
@@ -132,15 +132,18 @@
             }
         }
 
+        // Core Streaming Function
         function playStream(url, name) {
             channelTitle.textContent = name;
-            playerStatus.style.opacity = '0';
+            playerStatus.style.opacity = '0'; // Hide the "Select a channel" overlay
 
+            // Remove active state from all buttons
             document.querySelectorAll('.channel-btn').forEach(btn => {
                 btn.classList.remove('border-cyan-500', 'bg-zinc-800');
                 btn.classList.add('border-transparent');
             });
             
+            // Add active state to clicked button
             const activeBtn = Array.from(document.querySelectorAll('.channel-btn')).find(btn => btn.dataset.name === name);
             if (activeBtn) {
                 activeBtn.classList.remove('border-transparent');
@@ -159,6 +162,7 @@
             }
         }
 
+        // M3U Parser
         function parseM3U(text) {
             const lines = text.split(/\r?\n/);
             const channels = [];
@@ -167,15 +171,10 @@
             lines.forEach(line => {
                 line = line.trim();
                 if (line.toUpperCase().startsWith('#EXTINF:')) {
-                    const logoMatch = line.match(/(?:tvg-logo|logo|tvg-logo-url)\s*=\s*["']?([^"'\s,]+)["']?/i);
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/i);
                     const nameParts = line.split(',');
                     const name = nameParts[nameParts.length - 1].trim();
-                    let logo = logoMatch ? logoMatch[1] : fallbackLogo;
-                    
-                    if (logo.startsWith('http://')) {
-                        logo = logo.replace('http://', 'https://');
-                    }
-                    
+                    const logo = logoMatch ? logoMatch[1] : 'https://via.placeholder.com/150/09090b/FFFFFF?text=TV';
                     currentChannel = { name, logo };
                 } else if (line.startsWith('http')) {
                     if (currentChannel) {
@@ -188,6 +187,7 @@
             return channels;
         }
 
+        // Load Channels
         fetch(m3uUrl)
             .then(res => {
                 if (!res.ok) throw new Error(`Status: ${res.status}`);
@@ -200,34 +200,22 @@
                 channels.forEach((channel, index) => {
                     const btn = document.createElement('button');
                     btn.dataset.name = channel.name;
+                    // Streamed.pk style sleek list buttons
                     btn.className = "channel-btn w-full group flex items-center justify-between p-3 rounded-lg bg-zinc-900 border-l-2 border-transparent hover:border-cyan-500 hover:bg-zinc-800 transition-all cursor-pointer text-left";
                     
-                    // Main button shell layout
                     btn.innerHTML = `
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded bg-black border border-zinc-800 flex items-center justify-center p-1.5 overflow-hidden shrink-0 img-target">
-                                </div>
+                            <div class="w-10 h-10 rounded bg-black border border-zinc-800 flex items-center justify-center p-1 overflow-hidden shrink-0">
+                                <img src="${channel.logo}" class="w-full h-full object-contain" onerror="this.src='https://via.placeholder.com/150/09090b/FFFFFF?text=TV'">
+                            </div>
                             <span class="font-semibold text-zinc-200 text-sm group-hover:text-cyan-400 transition-colors">${channel.name}</span>
                         </div>
                         <svg class="w-4 h-4 text-zinc-600 group-hover:text-cyan-400 transition-colors opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     `;
-
-                    // Generate image programmatically to break cross-site referrer tracking and handle quote blocks safely
-                    const imgTarget = btn.querySelector('.img-target');
-                    const img = document.createElement('img');
-                    img.className = "w-full h-full object-contain";
-                    img.setAttribute('referrerpolicy', 'no-referrer'); 
-                    
-                    img.onerror = function() {
-                        this.onerror = null; 
-                        this.src = fallbackLogo;
-                    };
-                    img.src = channel.logo;
-                    imgTarget.appendChild(img);
-
                     btn.onclick = () => playStream(channel.url, channel.name);
                     channelContainer.appendChild(btn);
 
+                    // Autoplay first channel on load
                     if (index === 0) playStream(channel.url, channel.name);
                 });
             })
@@ -235,6 +223,7 @@
                 channelContainer.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">Playlist Error: ${err.message}</div>`;
             });
 
+        // Load ESPN API Data (Styled to match the dark theme)
         function fetchLiveSchedule() {
             apiScheduleContainer.innerHTML = '<div class="flex justify-center py-8"><span class="text-zinc-500 text-sm animate-pulse">Syncing with ESPN API...</span></div>';
             
