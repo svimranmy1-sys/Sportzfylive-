@@ -3,38 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HLS Video Player</title>
-    <!-- Include the HLS.js library -->
+    <title>Sportzfy | Live Streams</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body {
-            font-family: sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #121212;
-        }
-        .video-container {
-            width: 100%;
-            max-width: 800px;
-        }
-        video {
-            width: 100%;
-            border-radius: 8px;
-            background-color: #000;
-        }
+        body { background-color: #09090b; color: #f4f4f5; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        
+        /* Custom sleek dark scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        /* Video player glow effect */
+        .player-glow { box-shadow: 0 0 40px rgba(6, 182, 212, 0.05); }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
 
-    <div class="video-container">
-        <video id="video" controls></video>
-    </div>
+    <nav class="sticky top-0 z-50 bg-[#09090b]/90 backdrop-blur-md border-b border-zinc-800 px-4 md:px-8 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-cyan-500 rounded flex items-center justify-center text-zinc-950 font-black text-xl">S</div>
+            <h1 class="text-xl md:text-2xl font-black tracking-tight text-zinc-100">
+                Sportzfy<span class="text-cyan-400">.live</span>
+            </h1>
+        </div>
+        <div class="hidden md:flex items-center gap-2 text-xs font-semibold text-zinc-400 bg-zinc-900 px-3 py-1.5 rounded-full border border-zinc-800">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            SYSTEM ONLINE
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-[1500px] w-full mx-auto p-4 md:p-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
+        
+        <div class="xl:col-span-8 flex flex-col gap-4">
+            
+            <div class="bg-black rounded-xl overflow-hidden border border-zinc-800 player-glow relative">
+                <div id="playerStatus" class="absolute inset-0 flex items-center justify-center bg-black/80 z-10 pointer-events-none transition-opacity duration-300">
+                    <div class="flex flex-col items-center gap-3">
+                        <svg class="w-12 h-12 text-zinc-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span class="text-zinc-400 font-medium tracking-wide">Select a channel to begin</span>
+                    </div>
+                </div>
+                
+                <video id="videoPlayer" class="w-full aspect-video outline-none" controls autoplay playsinline></video>
+            </div>
+
+            <div class="bg-zinc-900/50 rounded-xl p-4 md:p-5 border border-zinc-800/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <span class="text-xs font-bold tracking-wider text-cyan-400 uppercase mb-1 block">Now Playing</span>
+                    <h2 id="currentChannelTitle" class="text-xl md:text-2xl font-bold text-zinc-100 flex items-center gap-3">
+                        Standby Mode
+                    </h2>
+                </div>
+                <div class="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold rounded flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                    LIVE BROADCAST
+                </div>
+            </div>
+        </div>
+
+        <div class="xl:col-span-4 flex flex-col h-[600px] xl:h-auto bg-zinc-900/30 rounded-xl border border-zinc-800/50 overflow-hidden">
+            
+            <div class="flex p-2 bg-zinc-900/80 border-b border-zinc-800">
+                <button id="tabChannels" class="flex-1 py-2.5 text-sm font-bold rounded-lg bg-zinc-800 text-zinc-100 shadow-sm transition-all cursor-pointer" onclick="switchTab('channels')">
+                    Live Channels
+                </button>
+                <button id="tabSchedule" class="flex-1 py-2.5 text-sm font-bold rounded-lg text-zinc-500 hover:text-zinc-300 transition-all cursor-pointer" onclick="switchTab('schedule')">
+                    Live Scores (ESPN)
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-3 relative">
+                
+                <div id="viewChannels" class="space-y-2">
+                    <div id="channelContainer" class="space-y-1.5">
+                        <div class="flex justify-center items-center py-12">
+                            <span class="text-zinc-500 text-sm font-medium animate-pulse">Fetching stream sources...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="viewSchedule" class="hidden space-y-3">
+                    <div id="apiScheduleContainer" class="space-y-3">
+                        <div class="flex justify-center items-center py-12">
+                            <span class="text-zinc-500 text-sm font-medium animate-pulse">Connecting to ESPN API...</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
 
     <script>
-        const video = document.getElementById('video');
+        // Data Sources (Unchanged from your previous setup)
+        const m3uUrl = 'https://raw.githubusercontent.com/svimranmy1-sys/Sportzfylive-/main/channels_playlist.txt';
+        const apiScheduleUrl = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
+
+        const video = document.getElementById('videoPlayer');
+        const channelTitle = document.getElementById('currentChannelTitle');
+        const channelContainer = document.getElementById('channelContainer');
+        const apiScheduleContainer = document.getElementById('apiScheduleContainer');
+        const playerStatus = document.getElementById('playerStatus');
+        let hls = null;
+
+        // Streamed.pk style UI Tab Switcher
+        function switchTab(tab) {
+            const btnChannels = document.getElementById('tabChannels');
+            const btnSchedule = document.getElementById('tabSchedule');
+            const viewChannels = document.getElementById('viewChannels');
+            const viewSchedule = document.getElementById('viewSchedule');
+
+            const activeClass = "flex-1 py-2.5 text-sm font-bold rounded-lg bg-zinc-800 text-zinc-100 shadow-sm transition-all cursor-pointer";
+            const inactiveClass = "flex-1 py-2.5 text-sm font-bold rounded-lg text-zinc-500 hover:text-zinc-300 transition-all cursor-pointer";
+
+            if (tab === 'channels') {
+                btnChannels.className = activeClass;
+                btnSchedule.className = inactiveClass;
+                viewChannels.classList.remove('hidden');
+                viewSchedule.classList.add('hidden');
+            } else {
+                btnSchedule.className = activeClass;
+                btnChannels.className = inactiveClass;
+                viewSchedule.classList.remove('hidden');
+                viewChannels.classList.add('hidden');
+                fetchLiveSchedule();
+            }
+        }
+
+        // Core Streaming Function
+        function playStream(url, name) {
+            channelTitle.textContent = name;
+            playerStatus.style.opacity = '0'; // Hide the "Select a channel" overlay
+
+            // Remove active state from all buttons
+            document.querySelectorAll('.channel-btn').forEach(btn => {
+                btn.classList.remove('border-cyan-500', 'bg-zinc-800');
+                btn.classList.add('border-transparent');
+            });
+            
+            // Add active state to clicked button
+            const activeBtn = Array.from(document.querySelectorAll('.channel-btn')).find(btn => btn.dataset.name === name);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent');
+                activeBtn.classList.add('border-cyan-500', 'bg-zinc-800');
+            }
+
+            if (Hls.isSupported()) {
+                if (hls) hls.destroy();
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                video.addEventListener('loadedmetadata', () => video.play());
+            }
+        }
+
+        // M3U Parser
+        function parseM3U(text) {
+            const lines = text.split(/\r?\n/);
+            const channels = [];
+            let currentChannel = null;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.toUpperCase().startsWith('#EXTINF:')) {
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/i);
+                    const nameParts = line.split(',');
+                    const name = nameParts[nameParts.length - 1].trim();
+                    const logo = logoMatch ? logoMatch[1] : 'https://via.placeholder.com/150/09090b/FFFFFF?text=TV';
+                    currentChannel = { name, logo };
+                } else if (line.startsWith('http')) {
+                    if (currentChannel) {
+                        currentChannel.url = line;
+                        channels.push(currentChannel);
+                        currentChannel = null;
+                    }
+                }
+            });
+            return channels;
+        }
+
+        // Load Channels
+        fetch(m3uUrl)
+            .then(res => {
+                if (!res.ok) throw new Error(`Status: ${res.status}`);
+                return res.text();
+            })
+            .then(data => {
+                channelContainer.innerHTML = '';
+                const channels = parseM3U(data);
+                
+                channels.forEach((channel, index) => {
+                    const btn = document.createElement('button');
+                    btn.dataset.name = channel.name;
+                    // Streamed.pk style sleek list buttons
+                    btn.className = "channel-btn w-full group flex items-center justify-between p-3 rounded-lg bg-zinc-900 border-l-2 border-transparent hover:border-cyan-500 hover:bg-zinc-800 transition-all cursor-pointer text-left";
+                    
+                    btn.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded bg-black border border-zinc-800 flex items-center justify-center p-1 overflow-hidden shrink-0">
+                                <img src="${channel.logo}" class="w-full h-full object-contain" onerror="this.src='https://via.placeholder.com/150/09090b/FFFFFF?text=TV'">
+                            </div>
+                            <span class="font-semibold text-zinc-200 text-sm group-hover:text-cyan-400 transition-colors">${channel.name}</span>
+                        </div>
+                        <svg class="w-4 h-4 text-zinc-600 group-hover:text-cyan-400 transition-colors opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    `;
+                    btn.onclick = () => playStream(channel.url, channel.name);
+                    channelContainer.appendChild(btn);
+
+                    // Autoplay first channel on load
+                    if (index === 0) playStream(channel.url, channel.name);
+                });
+            })
+            .catch(err => {
+                channelContainer.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">Playlist Error: ${err.message}</div>`;
+            });
+
+        // Load ESPN API Data (Styled to match the dark theme)
+        function fetchLiveSchedule() {
+            apiScheduleContainer.innerHTML = '<div class="flex justify-center py-8"><span class="text-zinc-500 text-sm animate-pulse">Syncing with ESPN API...</span></div>';
+            
+            fetch(apiScheduleUrl)
+                .then(res => res.json())
+                .then(data => {
+                    apiScheduleContainer.innerHTML = '';
+                    const events = data.events || [];
+
+                    if (events.length === 0) {
+                        apiScheduleContainer.innerHTML = '<div class="text-center p-6 bg-zinc-900 rounded-lg border border-zinc-800"><p class="text-zinc-400 text-sm">No live fixtures right now.</p></div>';
+                        return;
+                    }
+
+                    events.forEach(event => {
+                        const isLive = event.status?.type?.state === "in";
+                        const matchStatus = event.status?.type?.description || "Scheduled";
+                        const matchDate = new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                        const comp = event.competitions[0];
+                        const home = comp.competitors[0];
+                        const away = comp.competitors[1];
+
+                        const card = document.createElement('div');
+                        card.className = "bg-zinc-900 rounded-lg border border-zinc-800 p-3.5 hover:border-zinc-700 transition-colors";
+                        
+                        card.innerHTML = `
+                            <div class="flex justify-between items-center text-[10px] font-bold text-zinc-500 mb-3 uppercase tracking-wider">
+                                <span>${event.shortName || 'Match'}</span>
+                                <span class="${isLive ? 'text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20 animate-pulse' : 'text-zinc-400'}">
+                                    ${isLive ? 'LIVE' : matchStatus}
+                                </span>
+                            </div>
+                            <div class="space-y-2.5">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-6 h-6 rounded-full bg-zinc-950 flex items-center justify-center p-0.5">
+                                            <img src="${home.team?.logo || ''}" class="w-full h-full object-contain" onerror="this.style.display='none'">
+                                        </div>
+                                        <span class="text-sm font-semibold text-zinc-200">${home.team?.displayName}</span>
+                                    </div>
+                                    <span class="text-base font-bold ${isLive ? 'text-white' : 'text-zinc-400'}">${home.score || '0'}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-6 h-6 rounded-full bg-zinc-950 flex items-center justify-center p-0.5">
+                                            <img src="${away.team?.logo || ''}" class="w-full h-full object-contain" onerror="this.style.display='none'">
+                                        </div>
+                                        <span class="text-sm font-semibold text-zinc-200">${away.team?.displayName}</span>
+                                    </div>
+                                    <span class="text-base font-bold ${isLive ? 'text-white' : 'text-zinc-400'}">${away.score || '0'}</span>
+                                </div>
+                            </div>
+                            <div class="mt-3 pt-2.5 border-t border-zinc-800/80 flex justify-between items-center text-[11px] text-zinc-500 font-medium">
+                                <span>${comp.venue?.address?.city || 'TBD'}</span>
+                                <span>${matchDate}</span>
+                            </div>
+                        `;
+                        apiScheduleContainer.appendChild(card);
+                    });
+                })
+                .catch(() => {
+                    apiScheduleContainer.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">Failed to load API data.</div>`;
+                });
+        }
+    </script>
+</body>
+</html>        const video = document.getElementById('video');
         const videoSrc = 'https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8';
 
         if (Hls.isSupported()) {
