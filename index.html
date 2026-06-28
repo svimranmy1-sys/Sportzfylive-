@@ -3,312 +3,563 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sportzfy | Live Streams</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>StreamPortal - Live Sports & Entertainment</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <style>
-        body { background-color: #09090b; color: #f4f4f5; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-        
-        /* Custom sleek dark scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #09090b; }
-        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
 
-        /* Video player glow effect */
-        .player-glow { box-shadow: 0 0 40px rgba(6, 182, 212, 0.05); }
+    <style>
+        /* Base Reset & Theme Variables */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --bg-primary: #0b0e14;
+            --bg-secondary: #151a24;
+            --bg-card: #1f2633;
+            --accent-color: #2563eb;
+            --accent-live: #ef4444;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #2d3748;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        /* Navigation Header */
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo span {
+            color: var(--accent-live);
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--text-main);
+            background-color: var(--bg-card);
+        }
+
+        .nav-link.active {
+            border-bottom: 2px solid var(--accent-color);
+            border-radius: 4px 4px 0 0;
+        }
+
+        /* Main Content Frame Layout */
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active-section {
+            display: block;
+        }
+
+        /* Shared Utility Components */
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .live-badge {
+            background-color: var(--accent-live);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Card Layout System */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-thumb {
+            width: 100%;
+            height: 160px;
+            background-color: var(--bg-card);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-meta {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* 1. HOME PAGE STYLES */
+        .hero-banner {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 3rem;
+            margin-bottom: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 1rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* 2. LIVE PLAYER PAGE STYLES */
+        .player-container {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .player-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .video-wrapper {
+            background-color: black;
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .chat-box {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 400px;
+        }
+
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .chat-input-area {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex-grow: 1;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem;
+            color: var(--text-main);
+            border-radius: 4px;
+        }
+
+        /* 3. SCHEDULE PAGE STYLES */
+        .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .schedule-row {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 1.25rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .schedule-row:hover {
+            background-color: var(--bg-card);
+        }
+
+        .time-box {
+            min-width: 120px;
+        }
+
+        .time {
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .event-details {
+            flex-grow: 1;
+            padding: 0 1.5rem;
+        }
+
+        .event-title {
+            font-weight: 600;
+        }
+
+        .event-category {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .status-indicator {
+            font-size: 0.85rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+
+        .status-indicator.live {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-color: var(--accent-live);
+            color: var(--accent-live);
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
 
-    <nav class="sticky top-0 z-50 bg-[#09090b]/90 backdrop-blur-md border-b border-zinc-800 px-4 md:px-8 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8 bg-cyan-500 rounded flex items-center justify-center text-zinc-950 font-black text-xl">S</div>
-            <h1 class="text-xl md:text-2xl font-black tracking-tight text-zinc-100">
-                Sportzfy<span class="text-cyan-400">.live</span>
-            </h1>
+    <header>
+        <div class="nav-container">
+            <div class="logo">STREAM<span>.PK</span></div>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a class="nav-link active" onclick="switchTab('home')">Home</a></li>
+                    <li><a class="nav-link" onclick="switchTab('live')">Live Player</a></li>
+                    <li><a class="nav-link" onclick="switchTab('schedule')">Schedule</a></li>
+                    <li><a class="nav-link" onclick="switchTab('channels')">Channels</a></li>
+                </ul>
+            </nav>
         </div>
-        <div class="hidden md:flex items-center gap-2 text-xs font-semibold text-zinc-400 bg-zinc-900 px-3 py-1.5 rounded-full border border-zinc-800">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            SYSTEM ONLINE
-        </div>
-    </nav>
+    </header>
 
-    <main class="flex-grow max-w-[1500px] w-full mx-auto p-4 md:p-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
-        
-        <div class="xl:col-span-8 flex flex-col gap-4">
-            
-            <div class="bg-black rounded-xl overflow-hidden border border-zinc-800 player-glow relative">
-                <div id="playerStatus" class="absolute inset-0 flex items-center justify-center bg-black/80 z-10 pointer-events-none transition-opacity duration-300">
-                    <div class="flex flex-col items-center gap-3">
-                        <svg class="w-12 h-12 text-zinc-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span class="text-zinc-400 font-medium tracking-wide">Select a channel to begin</span>
+    <main>
+
+        <section id="home" class="page-section active-section">
+            <div class="hero-banner">
+                <div class="hero-text">
+                    <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                        <span class="live-badge">Live</span>
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">Featured Event</span>
+                    </div>
+                    <h1>World Championship Final</h1>
+                    <p style="color: var(--text-muted);">Watch the massive showdown live in ultra HD quality with zero lag.</p>
+                    <button class="btn" onclick="switchTab('live')">Watch Stream Now</button>
+                </div>
+            </div>
+
+            <h2 class="section-title">Trending Live Now <span class="live-badge">Live</span></h2>
+            <div class="grid-layout">
+                <div class="card" onclick="switchTab('live')">
+                    <div class="card-thumb">🍿 Match Stream Mirror 1</div>
+                    <div class="card-body">
+                        <div class="card-title">Football League: Team A vs Team B</div>
+                        <div class="card-meta">45k Viewers • Sports</div>
+                    </div>
+                </div>
+                <div class="card" onclick="switchTab('live')">
+                    <div class="card-thumb">🏎️ Grand Prix Stream</div>
+                    <div class="card-body">
+                        <div class="card-title">Main Race - Practice Session 2</div>
+                        <div class="card-meta">12k Viewers • Racing</div>
+                    </div>
+                </div>
+                <div class="card" onclick="switchTab('live')">
+                    <div class="card-thumb">🎾 Tennis Open</div>
+                    <div class="card-body">
+                        <div class="card-title">Quarter Finals Match Court 1</div>
+                        <div class="card-meta">8k Viewers • Tennis</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="live" class="page-section">
+            <h2 class="section-title">Football League: Team A vs Team B <span class="live-badge">Live</span></h2>
+            <div class="player-container">
+                <div class="video-container">
+                    <div class="video-wrapper">
+                        <video id="videoPlayer" controls autoplay muted style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                        <button class="btn" style="margin-top:0;">Server Link 1</button>
+                        <button class="btn" style="margin-top:0; background-color: var(--bg-card); border: 1px solid var(--border-color);">Server Link 2</button>
                     </div>
                 </div>
                 
-                <video id="videoPlayer" class="w-full aspect-video outline-none" controls autoplay playsinline></video>
-            </div>
-
-            <div class="bg-zinc-900/50 rounded-xl p-4 md:p-5 border border-zinc-800/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <span class="text-xs font-bold tracking-wider text-cyan-400 uppercase mb-1 block">Now Playing</span>
-                    <h2 id="currentChannelTitle" class="text-xl md:text-2xl font-bold text-zinc-100 flex items-center gap-3">
-                        Standby Mode
-                    </h2>
-                </div>
-                <div class="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold rounded flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                    LIVE BROADCAST
-                </div>
-            </div>
-        </div>
-
-        <div class="xl:col-span-4 flex flex-col h-[600px] xl:h-auto bg-zinc-900/30 rounded-xl border border-zinc-800/50 overflow-hidden">
-            
-            <div class="flex p-2 bg-zinc-900/80 border-b border-zinc-800">
-                <button id="tabChannels" class="flex-1 py-2.5 text-sm font-bold rounded-lg bg-zinc-800 text-zinc-100 shadow-sm transition-all cursor-pointer" onclick="switchTab('channels')">
-                    Live Channels
-                </button>
-                <button id="tabSchedule" class="flex-1 py-2.5 text-sm font-bold rounded-lg text-zinc-500 hover:text-zinc-300 transition-all cursor-pointer" onclick="switchTab('schedule')">
-                    Live Scores (ESPN)
-                </button>
-            </div>
-
-            <div class="flex-1 overflow-y-auto p-3 relative">
-                
-                <div id="viewChannels" class="space-y-2">
-                    <div id="channelContainer" class="space-y-1.5">
-                        <div class="flex justify-center items-center py-12">
-                            <span class="text-zinc-500 text-sm font-medium animate-pulse">Fetching stream sources...</span>
-                        </div>
+                <div class="chat-box">
+                    <div class="chat-header">Live Interaction Stream</div>
+                    <div class="chat-messages" id="chatMessages">
+                        <div><strong style="color: var(--accent-color);">User901:</strong> Let's go Team A! 🔥</div>
+                        <div><strong style="color: #10b981;">Mod_Alex:</strong> Welcome to the stream! Keep the chat friendly.</div>
+                        <div><strong style="color: var(--text-muted);">Cris77:</strong> What a save by the keeper wow</div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" placeholder="Send a message...">
+                        <button class="btn" style="margin: 0; padding: 0.5rem 1rem;">Send</button>
                     </div>
                 </div>
+            </div>
+        </section>
 
-                <div id="viewSchedule" class="hidden space-y-3">
-                    <div id="apiScheduleContainer" class="space-y-3">
-                        <div class="flex justify-center items-center py-12">
-                            <span class="text-zinc-500 text-sm font-medium animate-pulse">Connecting to ESPN API...</span>
-                        </div>
+        <section id="schedule" class="page-section">
+            <h2 class="section-title">Broadcast Schedule</h2>
+            <div class="schedule-list">
+                <div class="schedule-row">
+                    <div class="time-box">
+                        <div class="time">21:00 UTC</div>
+                        <div class="date">Today</div>
+                    </div>
+                    <div class="event-details">
+                        <div class="event-title">Football League: Team A vs Team B</div>
+                        <div class="event-category">Sports • Premium Stream 1</div>
+                    </div>
+                    <div class="status-indicator live">ON AIR NOW</div>
+                </div>
+                <div class="schedule-row">
+                    <div class="time-box">
+                        <div class="time">23:30 UTC</div>
+                        <div class="date">Today</div>
+                    </div>
+                    <div class="event-details">
+                        <div class="event-title">Cricket World Cup: Group Stage</div>
+                        <div class="event-category">Sports • Premium Stream 2</div>
+                    </div>
+                    <div class="status-indicator">UPCOMING</div>
+                </div>
+                <div class="schedule-row">
+                    <div class="time-box">
+                        <div class="time">04:00 UTC</div>
+                        <div class="date">Tomorrow</div>
+                    </div>
+                    <div class="event-details">
+                        <div class="event-title">Basketball Championship Matches</div>
+                        <div class="event-category">Basketball • Channel 4</div>
+                    </div>
+                    <div class="status-indicator">UPCOMING</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="channels" class="page-section">
+            <h2 class="section-title">Available Channels</h2>
+            <div class="grid-layout">
+                <div class="card" onclick="switchTab('live')">
+                    <div class="card-thumb" style="font-size: 2rem;">📺 CH 1</div>
+                    <div class="card-body" style="text-align: center;">
+                        <div class="card-title">Sports Network 1 HD</div>
                     </div>
                 </div>
-
+                <div class="card" onclick="switchTab('live')">
+                    <div class="card-thumb" style="font-size: 2rem;">📺 CH 2</div>
+                    <div class="card-body" style="text-align: center;">
+                        <div class="card-title">Sports Network 2 HD</div>
+                    </div>
+                </div>
+                <div class="card" onclick="switchTab('live')">
+                    <div class="card-thumb" style="font-size: 2rem;">⚽ MAX</div>
+                    <div class="card-body" style="text-align: center;">
+                        <div class="card-title">Football Central Channel</div>
+                    </div>
+                </div>
+                <div class="card" onclick="switchTab('live')">
+                    <div class="card-thumb" style="font-size: 2rem;">🏎️ VEL</div>
+                    <div class="card-body" style="text-align: center;">
+                        <div class="card-title">Velocity Motorsports TV</div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
+
     </main>
 
     <script>
-        // Data Sources (Unchanged from your previous setup)
-        const m3uUrl = 'https://raw.githubusercontent.com/svimranmy1-sys/Sportzfylive-/main/channels_playlist.txt';
-        const apiScheduleUrl = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
+        // 1. Navigation Tab-Switching Logic
+        function switchTab(tabId) {
+            const sections = document.querySelectorAll('.page-section');
+            sections.forEach(section => {
+                section.classList.remove('active-section');
+            });
 
-        const video = document.getElementById('videoPlayer');
-        const channelTitle = document.getElementById('currentChannelTitle');
-        const channelContainer = document.getElementById('channelContainer');
-        const apiScheduleContainer = document.getElementById('apiScheduleContainer');
-        const playerStatus = document.getElementById('playerStatus');
-        let hls = null;
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+            });
 
-        // Streamed.pk style UI Tab Switcher
-        function switchTab(tab) {
-            const btnChannels = document.getElementById('tabChannels');
-            const btnSchedule = document.getElementById('tabSchedule');
-            const viewChannels = document.getElementById('viewChannels');
-            const viewSchedule = document.getElementById('viewSchedule');
+            document.getElementById(tabId).classList.add('active-section');
 
-            const activeClass = "flex-1 py-2.5 text-sm font-bold rounded-lg bg-zinc-800 text-zinc-100 shadow-sm transition-all cursor-pointer";
-            const inactiveClass = "flex-1 py-2.5 text-sm font-bold rounded-lg text-zinc-500 hover:text-zinc-300 transition-all cursor-pointer";
-
-            if (tab === 'channels') {
-                btnChannels.className = activeClass;
-                btnSchedule.className = inactiveClass;
-                viewChannels.classList.remove('hidden');
-                viewSchedule.classList.add('hidden');
-            } else {
-                btnSchedule.className = activeClass;
-                btnChannels.className = inactiveClass;
-                viewSchedule.classList.remove('hidden');
-                viewChannels.classList.add('hidden');
-                fetchLiveSchedule();
+            const clickedLink = Array.from(navLinks).find(link => 
+                link.getAttribute('onclick').includes(tabId)
+            );
+            if (clickedLink) {
+                clickedLink.classList.add('active');
             }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Core Streaming Function
-        function playStream(url, name) {
-            channelTitle.textContent = name;
-            playerStatus.style.opacity = '0'; // Hide the "Select a channel" overlay
-
-            // Remove active state from all buttons
-            document.querySelectorAll('.channel-btn').forEach(btn => {
-                btn.classList.remove('border-cyan-500', 'bg-zinc-800');
-                btn.classList.add('border-transparent');
-            });
+        // 2. Live HLS Video Processing Engine
+        document.addEventListener("DOMContentLoaded", function() {
+            const video = document.getElementById('videoPlayer');
             
-            // Add active state to clicked button
-            const activeBtn = Array.from(document.querySelectorAll('.channel-btn')).find(btn => btn.dataset.name === name);
-            if (activeBtn) {
-                activeBtn.classList.remove('border-transparent');
-                activeBtn.classList.add('border-cyan-500', 'bg-zinc-800');
-            }
+            // Public trial live stream resource endpoint (.m3u8 index file)
+            const streamUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
 
             if (Hls.isSupported()) {
-                if (hls) hls.destroy();
-                hls = new Hls();
-                hls.loadSource(url);
+                const hls = new Hls();
+                hls.loadSource(streamUrl);
                 hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = url;
-                video.addEventListener('loadedmetadata', () => video.play());
-            }
-        }
-
-        // M3U Parser
-        function parseM3U(text) {
-            const lines = text.split(/\r?\n/);
-            const channels = [];
-            let currentChannel = null;
-
-            lines.forEach(line => {
-                line = line.trim();
-                if (line.toUpperCase().startsWith('#EXTINF:')) {
-                    const logoMatch = line.match(/tvg-logo="([^"]+)"/i);
-                    const nameParts = line.split(',');
-                    const name = nameParts[nameParts.length - 1].trim();
-                    const logo = logoMatch ? logoMatch[1] : 'https://via.placeholder.com/150/09090b/FFFFFF?text=TV';
-                    currentChannel = { name, logo };
-                } else if (line.startsWith('http')) {
-                    if (currentChannel) {
-                        currentChannel.url = line;
-                        channels.push(currentChannel);
-                        currentChannel = null;
-                    }
-                }
-            });
-            return channels;
-        }
-
-        // Load Channels
-        fetch(m3uUrl)
-            .then(res => {
-                if (!res.ok) throw new Error(`Status: ${res.status}`);
-                return res.text();
-            })
-            .then(data => {
-                channelContainer.innerHTML = '';
-                const channels = parseM3U(data);
                 
-                channels.forEach((channel, index) => {
-                    const btn = document.createElement('button');
-                    btn.dataset.name = channel.name;
-                    // Streamed.pk style sleek list buttons
-                    btn.className = "channel-btn w-full group flex items-center justify-between p-3 rounded-lg bg-zinc-900 border-l-2 border-transparent hover:border-cyan-500 hover:bg-zinc-800 transition-all cursor-pointer text-left";
-                    
-                    btn.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded bg-black border border-zinc-800 flex items-center justify-center p-1 overflow-hidden shrink-0">
-                                <img src="${channel.logo}" class="w-full h-full object-contain" onerror="this.src='https://via.placeholder.com/150/09090b/FFFFFF?text=TV'">
-                            </div>
-                            <span class="font-semibold text-zinc-200 text-sm group-hover:text-cyan-400 transition-colors">${channel.name}</span>
-                        </div>
-                        <svg class="w-4 h-4 text-zinc-600 group-hover:text-cyan-400 transition-colors opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    `;
-                    btn.onclick = () => playStream(channel.url, channel.name);
-                    channelContainer.appendChild(btn);
-
-                    // Autoplay first channel on load
-                    if (index === 0) playStream(channel.url, channel.name);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    video.play();
                 });
-            })
-            .catch(err => {
-                channelContainer.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">Playlist Error: ${err.message}</div>`;
-            });
-
-        // Load ESPN API Data (Styled to match the dark theme)
-        function fetchLiveSchedule() {
-            apiScheduleContainer.innerHTML = '<div class="flex justify-center py-8"><span class="text-zinc-500 text-sm animate-pulse">Syncing with ESPN API...</span></div>';
-            
-            fetch(apiScheduleUrl)
-                .then(res => res.json())
-                .then(data => {
-                    apiScheduleContainer.innerHTML = '';
-                    const events = data.events || [];
-
-                    if (events.length === 0) {
-                        apiScheduleContainer.innerHTML = '<div class="text-center p-6 bg-zinc-900 rounded-lg border border-zinc-800"><p class="text-zinc-400 text-sm">No live fixtures right now.</p></div>';
-                        return;
+                
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    if (data.fatal) {
+                        console.warn("HLS stream engine fault handled. Attempting hot reload...", data);
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                break;
+                        }
                     }
-
-                    events.forEach(event => {
-                        const isLive = event.status?.type?.state === "in";
-                        const matchStatus = event.status?.type?.description || "Scheduled";
-                        const matchDate = new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                        const comp = event.competitions[0];
-                        const home = comp.competitors[0];
-                        const away = comp.competitors[1];
-
-                        const card = document.createElement('div');
-                        card.className = "bg-zinc-900 rounded-lg border border-zinc-800 p-3.5 hover:border-zinc-700 transition-colors";
-                        
-                        card.innerHTML = `
-                            <div class="flex justify-between items-center text-[10px] font-bold text-zinc-500 mb-3 uppercase tracking-wider">
-                                <span>${event.shortName || 'Match'}</span>
-                                <span class="${isLive ? 'text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20 animate-pulse' : 'text-zinc-400'}">
-                                    ${isLive ? 'LIVE' : matchStatus}
-                                </span>
-                            </div>
-                            <div class="space-y-2.5">
-                                <div class="flex justify-between items-center">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-6 h-6 rounded-full bg-zinc-950 flex items-center justify-center p-0.5">
-                                            <img src="${home.team?.logo || ''}" class="w-full h-full object-contain" onerror="this.style.display='none'">
-                                        </div>
-                                        <span class="text-sm font-semibold text-zinc-200">${home.team?.displayName}</span>
-                                    </div>
-                                    <span class="text-base font-bold ${isLive ? 'text-white' : 'text-zinc-400'}">${home.score || '0'}</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-6 h-6 rounded-full bg-zinc-950 flex items-center justify-center p-0.5">
-                                            <img src="${away.team?.logo || ''}" class="w-full h-full object-contain" onerror="this.style.display='none'">
-                                        </div>
-                                        <span class="text-sm font-semibold text-zinc-200">${away.team?.displayName}</span>
-                                    </div>
-                                    <span class="text-base font-bold ${isLive ? 'text-white' : 'text-zinc-400'}">${away.score || '0'}</span>
-                                </div>
-                            </div>
-                            <div class="mt-3 pt-2.5 border-t border-zinc-800/80 flex justify-between items-center text-[11px] text-zinc-500 font-medium">
-                                <span>${comp.venue?.address?.city || 'TBD'}</span>
-                                <span>${matchDate}</span>
-                            </div>
-                        `;
-                        apiScheduleContainer.appendChild(card);
-                    });
-                })
-                .catch(() => {
-                    apiScheduleContainer.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">Failed to load API data.</div>`;
                 });
-        }
-    </script>
-</body>
-</html>        const video = document.getElementById('video');
-        const videoSrc = 'https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8';
-
-        if (Hls.isSupported()) {
-            const hls = new Hls();
-            hls.loadSource(videoSrc);
-            hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                video.play();
-            });
-        }
-        // Native fallback for Safari
-        else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = videoSrc;
-            video.addEventListener('loadedmetadata', function() {
-                video.play();
-            });
-        }
+            } 
+            else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Native platform parsing callback fallback engine setup (Safari and iOS environments)
+                video.src = streamUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    video.play();
+                });
+            }
+        });
     </script>
 </body>
 </html>
